@@ -15,7 +15,7 @@ For each approved video idea, generate a complete script, AI voiceover, fetch st
 
 ## Tools Used (per video)
 
-1. `tools/generate_script.py --idea-id N --ideas-file .tmp/ideas.json --output .tmp/scripts/video_N_script.json`
+1. `tools/generate_retention_script.py --idea-id N --ideas-file .tmp/ideas.json --output .tmp/scripts/video_N_script.json`
 2. `tools/generate_voiceover.py --script-file ... --output .tmp/audio/video_N_voiceover.mp3`
 3. `tools/fetch_pexels_footage.py --script-file ... --output-dir .tmp/footage/video_N/`
 4. `tools/assemble_video.py --script-file ... --audio-file ... --footage-dir ... --output .tmp/output/video_N_final.mp4`
@@ -33,7 +33,7 @@ After all videos:
 3. For each approved idea:
    - **Script**: Claude Sonnet generates 8-10 minute segmented script
      - Each segment has: text, visual_cue, overlay_text, pexels_search_queries (array of 3), duration_estimate
-     - Structure: Hook → Intro → 5-7 Points → CTA → Outro
+     - Structure: Hook → Bridge → Context → 4 Points (with pattern interrupts between) → Engagement → CTA
      - `pexels_search_queries` has 3 varied B-roll queries per segment (specific → complementary → broad fallback)
    - **Voiceover**: OpenAI TTS `tts-1` model
      - Splits long text at sentence boundaries (4096 char API limit)
