@@ -70,8 +70,11 @@ def wait_for_processing(service, video_id, max_wait=600):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Publish YouTube video (unlisted → public)")
+    parser = argparse.ArgumentParser(description="Publish YouTube video (unlisted → public or scheduled)")
     parser.add_argument("--video-id", required=True, help="YouTube video ID")
+    parser.add_argument("--publish-at", default=None,
+                        help="Schedule publish at this UTC ISO 8601 time (e.g. 2026-03-16T03:30:00Z). "
+                             "If omitted, publishes immediately.")
     parser.add_argument("--skip-processing-check", action="store_true",
                         help="Skip waiting for YouTube processing")
     args = parser.parse_args()
@@ -84,14 +87,21 @@ def main():
             print(f"ERROR: Video {args.video_id} not ready to publish.", file=sys.stderr)
             sys.exit(1)
 
-    print(f"Publishing video {args.video_id}...", file=sys.stderr)
+    if args.publish_at:
+        print(f"Scheduling video {args.video_id} for {args.publish_at}...", file=sys.stderr)
+        status_body = {
+            "privacyStatus": "private",
+            "publishAt": args.publish_at,
+            "selfDeclaredMadeForKids": False,
+        }
+    else:
+        print(f"Publishing video {args.video_id} immediately...", file=sys.stderr)
+        status_body = {"privacyStatus": "public", "selfDeclaredMadeForKids": False}
+
     try:
         service.videos().update(
             part="status",
-            body={
-                "id": args.video_id,
-                "status": {"privacyStatus": "public", "selfDeclaredMadeForKids": False},
-            },
+            body={"id": args.video_id, "status": status_body},
         ).execute()
     except HttpError as e:
         if e.resp.status == 403:
@@ -101,7 +111,10 @@ def main():
         sys.exit(1)
 
     public_url = f"https://www.youtube.com/watch?v={args.video_id}"
-    print(f"Published: {public_url}", file=sys.stderr)
+    if args.publish_at:
+        print(f"Scheduled: {public_url} → goes public at {args.publish_at}", file=sys.stderr)
+    else:
+        print(f"Published: {public_url}", file=sys.stderr)
     print(public_url)
 
 
