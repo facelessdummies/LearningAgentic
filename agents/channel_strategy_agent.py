@@ -32,7 +32,7 @@ load_dotenv()
 PROJECT_ROOT = os.path.dirname(os.path.dirname(__file__))
 TOOLS_DIR = os.path.join(PROJECT_ROOT, "tools")
 TMP_DIR = os.path.join(PROJECT_ROOT, ".tmp")
-STRATEGY_PATH = os.path.join(TMP_DIR, "channel_strategy.json")
+STRATEGY_PATH = os.path.join(PROJECT_ROOT, "channel_strategy.json")
 PYTHON = sys.executable
 
 

@@ -39,7 +39,7 @@ load_dotenv()
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(__file__))
 TOKEN_PATH = os.path.join(PROJECT_ROOT, "token.json")
-DEFAULT_STRATEGY_PATH = os.path.join(PROJECT_ROOT, ".tmp", "channel_strategy.json")
+DEFAULT_STRATEGY_PATH = os.path.join(PROJECT_ROOT, "channel_strategy.json")
 
 
 def load_strategy(path):

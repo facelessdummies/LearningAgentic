@@ -32,7 +32,7 @@ load_dotenv()
 THUMBNAIL_WIDTH = 1280
 THUMBNAIL_HEIGHT = 720
 PROJECT_ROOT = os.path.dirname(os.path.dirname(__file__))
-DEFAULT_STRATEGY_PATH = os.path.join(PROJECT_ROOT, ".tmp", "channel_strategy.json")
+DEFAULT_STRATEGY_PATH = os.path.join(PROJECT_ROOT, "channel_strategy.json")
 
 # Font paths to try in order (macOS, Linux, fallback)
 # Impact is listed first — matches channel strategy's "ultra-bold sans-serif" spec

@@ -27,7 +27,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(__file__))
-DEFAULT_OUTPUT = os.path.join(PROJECT_ROOT, ".tmp", "channel_strategy.json")
+DEFAULT_OUTPUT = os.path.join(PROJECT_ROOT, "channel_strategy.json")
 
 SYSTEM_PROMPT = (
     "You are a senior YouTube growth strategist who has scaled multiple channels from 0 to 1M subscribers. "

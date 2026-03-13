@@ -2,6 +2,7 @@
 .env
 credentials.json
 token.json
+channel_strategy.json
 
 # Temporary processing files
 .tmp/

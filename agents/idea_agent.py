@@ -117,6 +117,20 @@ def main():
     except Exception as e:
         print(f"WARNING: Could not reset state: {e}", file=sys.stderr)
 
+    # ── Step 0a: Ensure channel strategy exists ─────────────────────────────
+    strategy_path = os.path.join(PROJECT_ROOT, "channel_strategy.json")
+    if not os.path.exists(strategy_path):
+        print("[0/5] No channel_strategy.json found — generating now...")
+        try:
+            cmd = [PYTHON, os.path.join(PROJECT_ROOT, "agents", "channel_strategy_agent.py")]
+            result = subprocess.run(cmd, capture_output=True, text=True)
+            if result.returncode == 0:
+                print("  → Channel strategy generated.")
+            else:
+                print(f"  WARNING: Strategy generation failed (non-fatal): {result.stderr.strip()}", file=sys.stderr)
+        except Exception as e:
+            print(f"  WARNING: Could not generate strategy (non-fatal): {e}", file=sys.stderr)
+
     # ── Step 0: Load Analytics Context (if available) ──────────────────────
     print("[0/5] Loading analytics context...")
     analytics_context = ""
