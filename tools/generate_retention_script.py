@@ -1,0 +1,256 @@
+"""
+generate_retention_script.py — Generate a retention-optimized video script using Claude Sonnet
+
+Acts as a professional YouTube scriptwriter specialized in retention optimization.
+Produces a script structured with:
+  - Pattern interrupt hook in the first 5 seconds
+  - Curiosity-driven loop that keeps viewers watching
+  - Clear problem → insight → payoff structure
+  - Strategic pattern interrupts every 30-60 seconds
+  - Moments that encourage comments and engagement
+  - Subscriber-driving CTA at the end
+
+Output schema is IDENTICAL to generate_script.py — drop-in compatible with the full pipeline.
+
+Usage:
+    python3 tools/generate_retention_script.py \
+        --idea-id 3 \
+        --ideas-file .tmp/ideas.json \
+        --output .tmp/scripts/video_3_script.json
+
+    # From a topic directly (no ideas file needed):
+    python3 tools/generate_retention_script.py \
+        --topic "5 habits that changed my life" \
+        --output .tmp/scripts/standalone_script.json
+
+Output: JSON file with segmented script
+Exit code: 0 on success, 1 on failure
+"""
+
+import argparse
+import json
+import os
+import sys
+
+import anthropic
+from dotenv import load_dotenv
+
+load_dotenv()
+
+PROJECT_ROOT = os.path.dirname(os.path.dirname(__file__))
+DEFAULT_STRATEGY_PATH = os.path.join(PROJECT_ROOT, ".tmp", "channel_strategy.json")
+
+
+def load_strategy(path):
+    """Load channel strategy JSON if it exists, return {} otherwise."""
+    try:
+        if path and os.path.exists(path):
+            with open(path) as f:
+                return json.load(f)
+    except Exception:
+        pass
+    return {}
+
+
+def build_voice_and_positioning(idea, strategy):
+    """Build the brand voice + channel positioning block from strategy."""
+    if not strategy:
+        return "- Voice: Warm, direct, conversational — like a knowledgeable friend giving real advice."
+
+    positioning = strategy.get("channel_positioning", {})
+    brand_voice = positioning.get("brand_voice", "")
+    unique_angle = positioning.get("unique_angle", "")
+    differentiation = positioning.get("differentiation", "")
+
+    # Find the matching content format entry for richer guidance
+    idea_format = idea.get("content_format", "").lower()
+    format_guidance = ""
+    for f in strategy.get("content_formats", []):
+        if idea_format and idea_format in f.get("format", "").lower():
+            format_guidance = f"\n- Content Format in Use ({f['format']}): {f.get('why_it_works', '')}"
+            break
+
+    lines = []
+    if brand_voice:
+        lines.append(f"- Brand Voice: {brand_voice}")
+    if unique_angle:
+        lines.append(f"- Channel Angle: {unique_angle}")
+    if differentiation:
+        lines.append(f"- Differentiation: {differentiation}")
+    if format_guidance:
+        lines.append(format_guidance)
+    return "\n".join(lines) if lines else "- Voice: Warm, direct, conversational."
+
+
+def build_prompt(idea, channel_name, niche, strategy=None):
+    voice_block = build_voice_and_positioning(idea, strategy)
+
+    return f"""Act as a professional YouTube scriptwriter specialized in retention optimization for the "{niche}" niche.
+
+Write a complete, retention-engineered video script for this idea:
+
+Title: {idea['title']}
+Hook concept: {idea.get('hook', '')}
+Unique angle: {idea.get('angle', '')}
+Target emotion: {idea.get('target_emotion', 'curiosity')}
+Content format: {idea.get('content_format', 'breakdown')}
+
+Channel: {channel_name}
+
+RETENTION ENGINEERING REQUIREMENTS:
+- Total length: ~2 minutes spoken at natural pace (~130 words/min = 250-280 words total)
+- Format: Faceless channel — stock footage + AI voiceover. Second-person ("you"), no "I" statements.
+{voice_block}
+
+HOOK (first 5 seconds): Must be a PATTERN INTERRUPT — something unexpected, counterintuitive, or surprising that breaks the viewer's scroll. NOT a question. A bold statement, shocking stat, or tension-creating sentence.
+
+CURIOSITY LOOP: Open a loop in the hook that only gets resolved at the end — give viewers a reason to stay all the way through.
+
+STRUCTURE:
+  1. Pattern interrupt hook (5 seconds) → immediately creates curiosity/tension
+  2. Bridge: reinforce the promise, tease what's coming (10 seconds)
+  3. Main content: problem → insight → payoff (each point max 30 seconds)
+     - Include a PATTERN INTERRUPT between main points: rhetorical question, surprising stat, or scene shift cue
+  4. Engagement moment: a specific question for viewers to answer in the comments (e.g., "Comment below: which of these do you already do?")
+  5. CTA: Drive subscriptions with a specific value promise, not generic "subscribe" — tell them EXACTLY what they'll get next
+
+Return ONLY a valid JSON object with this exact structure:
+{{
+  "idea_id": {idea['id']},
+  "title": "{idea['title']}",
+  "thumbnail_text": "SHORT THUMBNAIL TEXT (max 5 words, all caps, creates curiosity or tension)",
+  "description": "YouTube video description (150-300 words, includes timestamps, relevant keywords, engagement CTA)",
+  "tags": ["tag1", "tag2"],
+  "category_id": "26",
+  "total_duration_estimate": 120,
+  "segments": [
+    {{
+      "segment_id": 1,
+      "type": "hook",
+      "text": "The exact spoken words — pattern interrupt, bold statement, no warm-up",
+      "visual_cue": "Specific footage description — what to show (concrete, not abstract)",
+      "overlay_text": "On-screen text that reinforces the hook tension (or null)",
+      "duration_estimate": 15,
+      "pexels_search_queries": [
+        "primary scene (most specific, e.g. 'person waking up alarm dark room')",
+        "different subject/setting for same theme (e.g. 'morning routine coffee window light')",
+        "broader fallback that always returns results (e.g. 'person desk focused morning')"
+      ]
+    }}
+  ]
+}}
+
+Segment types in order: hook, bridge, point_1, pattern_interrupt, point_2, engagement, cta
+- hook: 10-15s, bold pattern interrupt
+- bridge: 10-15s, reinforce promise, tease content
+- point_1: 25-35s, problem → insight → takeaway
+- pattern_interrupt: 5-10s, rhetorical question or surprising stat (overlay_text is the key phrase)
+- point_2: 25-35s, deeper insight → payoff
+- engagement: 10-15s, specific comment prompt question
+- cta: 15-20s, value-specific subscription CTA
+
+The pexels_search_queries array must have EXACTLY 3 varied queries per segment:
+- Query 1: Most specific scene for this segment
+- Query 2: Different subject/setting, same theme
+- Query 3: Broader fallback (will always return results)
+All queries: specific concrete nouns. BAD: "motivation". GOOD: "runner sunrise park trail".
+
+Respond ONLY with the JSON object, no other text.
+"""
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Generate retention-optimized video script")
+    parser.add_argument("--idea-id", type=int, default=None, help="Idea ID from ideas file")
+    parser.add_argument("--ideas-file", default="", help="Path to ideas.json")
+    parser.add_argument("--topic", default="", help="Topic string (used when no ideas file)")
+    parser.add_argument("--output", required=True, help="Output JSON file path")
+    parser.add_argument("--strategy-file", default="", help="Path to channel_strategy.json (auto-detected if not set)")
+    args = parser.parse_args()
+
+    if not args.idea_id and not args.topic:
+        print("ERROR: Provide either --idea-id + --ideas-file, or --topic", file=sys.stderr)
+        sys.exit(1)
+
+    # Build idea dict
+    if args.topic:
+        idea = {
+            "id": 0,
+            "title": args.topic,
+            "hook": "",
+            "angle": "",
+            "target_emotion": "curiosity",
+            "content_format": "breakdown",
+        }
+    else:
+        if not args.ideas_file or not os.path.exists(args.ideas_file):
+            print(f"ERROR: Ideas file not found: {args.ideas_file}", file=sys.stderr)
+            sys.exit(1)
+        with open(args.ideas_file) as f:
+            ideas = json.load(f)
+        idea = next((i for i in ideas if i.get("id") == args.idea_id), None)
+        if not idea:
+            print(f"ERROR: Idea ID {args.idea_id} not found in {args.ideas_file}", file=sys.stderr)
+            sys.exit(1)
+
+    api_key = os.getenv("ANTHROPIC_API_KEY")
+    if not api_key:
+        print("ERROR: ANTHROPIC_API_KEY not set in .env", file=sys.stderr)
+        sys.exit(1)
+
+    channel_name = os.getenv("CHANNEL_NAME", "Our Channel")
+    niche = os.getenv("NICHE", "Self Development")
+
+    strategy_path = args.strategy_file or DEFAULT_STRATEGY_PATH
+    strategy = load_strategy(strategy_path)
+    if strategy:
+        print(f"  Strategy loaded: {strategy_path}", file=sys.stderr)
+
+    client = anthropic.Anthropic(api_key=api_key)
+    prompt = build_prompt(idea, channel_name, niche, strategy)
+
+    print(f"Generating retention script for: '{idea['title']}'...", file=sys.stderr)
+
+    script = None
+    for attempt in range(2):
+        try:
+            response = client.messages.create(
+                model="claude-sonnet-4-6",
+                max_tokens=2500,
+                messages=[{"role": "user", "content": prompt}],
+            )
+            raw = response.content[0].text.strip()
+
+            if raw.startswith("```"):
+                raw = raw.split("```")[1]
+                if raw.startswith("json"):
+                    raw = raw[4:]
+                raw = raw.strip()
+
+            script = json.loads(raw)
+
+            if "segments" not in script or not script["segments"]:
+                raise ValueError("Script has no segments")
+            break
+        except (json.JSONDecodeError, ValueError) as e:
+            if attempt == 0:
+                print(f"Attempt 1 failed ({e}), retrying...", file=sys.stderr)
+            else:
+                print(f"ERROR: Could not parse script: {e}", file=sys.stderr)
+                sys.exit(1)
+
+    # Recalculate duration from word count
+    total_words = sum(len(s.get("text", "").split()) for s in script.get("segments", []))
+    estimated_duration = int(total_words / 130 * 60)
+    script["total_duration_estimate"] = estimated_duration
+
+    os.makedirs(os.path.dirname(os.path.abspath(args.output)), exist_ok=True)
+    with open(args.output, "w") as f:
+        json.dump(script, f, indent=2)
+
+    print(f"Retention script saved → {args.output} (~{estimated_duration}s, {total_words} words)", file=sys.stderr)
+    print(args.output)
+
+
+if __name__ == "__main__":
+    main()
