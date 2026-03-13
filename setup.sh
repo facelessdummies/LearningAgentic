@@ -141,5 +141,5 @@ echo "     0 21 * * 0  cd $SCRIPT_DIR && $VENV_PYTHON agents/analytics_agent.py 
 echo "     0 22 * * 0  cd $SCRIPT_DIR && $VENV_PYTHON agents/idea_agent.py >> .tmp/cron.log 2>&1"
 echo "     */30 * * * * cd $SCRIPT_DIR && $VENV_PYTHON agents/approval_poller.py >> .tmp/cron.log 2>&1"
 echo ""
-echo "  3. Grant cron Full Disk Access:"
+echo "  4. Grant cron Full Disk Access:"
 echo "     System Preferences > Privacy & Security > Full Disk Access > add /usr/sbin/cron"

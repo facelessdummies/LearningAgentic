@@ -37,12 +37,12 @@ Target emotion: {idea['target_emotion']}
 Channel name: {channel_name}
 
 SCRIPT REQUIREMENTS:
-- Total length: ~2 minutes spoken at a natural pace (~130 words/minute = 250-280 words total)
+- Total length: ~8-10 minutes spoken at a natural pace (~130 words/minute = 1040-1300 words total)
 - Format: Faceless channel — stock footage + AI voiceover. No "I" statements unless as hypothetical examples.
 - Voice: Warm, authoritative, second-person ("you"), not preachy. Like advice from a knowledgeable friend.
-- Structure: Hook → 1-2 main points → CTA (keep it tight — this is a short test video)
-- Each main point: one sentence setup, one concrete example, one actionable takeaway
-- Use pattern interrupts: one rhetorical question or surprising stat
+- Structure: Hook → context → 4 main points (with pattern interrupts between) → engagement → CTA
+- Each main point: one sentence setup, one concrete example, one actionable takeaway (~75-90 seconds each)
+- Use pattern interrupts between points: rhetorical question or surprising stat
 
 Return ONLY a valid JSON object with this exact structure:
 {{
@@ -52,7 +52,7 @@ Return ONLY a valid JSON object with this exact structure:
   "description": "YouTube video description (150-300 words, includes timestamps, relevant keywords, CTA to subscribe)",
   "tags": ["tag1", "tag2", ...],  // 10-15 relevant tags
   "category_id": "26",  // YouTube category (26 = Howto & Style)
-  "total_duration_estimate": 120,  // seconds
+  "total_duration_estimate": 540,  // seconds (~9 min target)
   "segments": [
     {{
       "segment_id": 1,
@@ -70,8 +70,13 @@ Return ONLY a valid JSON object with this exact structure:
   ]
 }}
 
-Segment types: hook, point_1, point_2 (optional), cta
-Each segment: 15-40 seconds of spoken content
+Segment types in order: hook, context, point_1, pattern_interrupt_1, point_2, pattern_interrupt_2, point_3, pattern_interrupt_3, point_4, engagement, cta
+- hook: 15-20s, bold opening that grabs attention
+- context: 30-45s, set up the problem/premise
+- point_1 through point_4: 75-90s each, setup → example → takeaway
+- pattern_interrupt_1/2/3: 10-15s each, rhetorical question or surprising stat between points
+- engagement: 20-30s, specific comment prompt question
+- cta: 30-45s, value-specific subscription CTA
 The pexels_search_queries array must have exactly 3 queries, each a different visual angle on the segment:
 - Query 1: Most specific scene tied directly to the segment content
 - Query 2: Different subject or setting that complements the same theme
@@ -122,7 +127,7 @@ def main():
         try:
             response = client.messages.create(
                 model="claude-sonnet-4-6",
-                max_tokens=2000,
+                max_tokens=6000,
                 messages=[{"role": "user", "content": prompt}],
             )
             raw = response.content[0].text.strip()

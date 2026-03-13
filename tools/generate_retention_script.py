@@ -98,21 +98,23 @@ Content format: {idea.get('content_format', 'breakdown')}
 Channel: {channel_name}
 
 RETENTION ENGINEERING REQUIREMENTS:
-- Total length: ~2 minutes spoken at natural pace (~130 words/min = 250-280 words total)
+- Total length: ~8-10 minutes spoken at natural pace (~130 words/min = 1040-1300 words total)
 - Format: Faceless channel — stock footage + AI voiceover. Second-person ("you"), no "I" statements.
 {voice_block}
 
 HOOK (first 5 seconds): Must be a PATTERN INTERRUPT — something unexpected, counterintuitive, or surprising that breaks the viewer's scroll. NOT a question. A bold statement, shocking stat, or tension-creating sentence.
 
-CURIOSITY LOOP: Open a loop in the hook that only gets resolved at the end — give viewers a reason to stay all the way through.
+CURIOSITY LOOP: Open a loop in the hook that only gets resolved in point_4 — give viewers a reason to stay all the way through.
 
 STRUCTURE:
-  1. Pattern interrupt hook (5 seconds) → immediately creates curiosity/tension
-  2. Bridge: reinforce the promise, tease what's coming (10 seconds)
-  3. Main content: problem → insight → payoff (each point max 30 seconds)
-     - Include a PATTERN INTERRUPT between main points: rhetorical question, surprising stat, or scene shift cue
-  4. Engagement moment: a specific question for viewers to answer in the comments (e.g., "Comment below: which of these do you already do?")
-  5. CTA: Drive subscriptions with a specific value promise, not generic "subscribe" — tell them EXACTLY what they'll get next
+  1. Pattern interrupt hook (15-20 seconds) → immediately creates curiosity/tension
+  2. Bridge: reinforce the promise, tease what's coming (20-30 seconds)
+  3. Context: set up the problem space, why this matters (30-45 seconds)
+  4. Four main points (~75-90 seconds each): problem → insight → concrete example → actionable takeaway
+     - Include a PATTERN INTERRUPT between each point (10-15 seconds): rhetorical question, surprising stat
+     - Point 4 should resolve the curiosity loop opened in the hook
+  5. Engagement moment: a specific question for viewers to answer in the comments (20-30 seconds)
+  6. CTA: Drive subscriptions with a specific value promise, not generic "subscribe" — tell them EXACTLY what they'll get next (30-45 seconds)
 
 Return ONLY a valid JSON object with this exact structure:
 {{
@@ -122,7 +124,7 @@ Return ONLY a valid JSON object with this exact structure:
   "description": "YouTube video description (150-300 words, includes timestamps, relevant keywords, engagement CTA)",
   "tags": ["tag1", "tag2"],
   "category_id": "26",
-  "total_duration_estimate": 120,
+  "total_duration_estimate": 540,
   "segments": [
     {{
       "segment_id": 1,
@@ -130,7 +132,7 @@ Return ONLY a valid JSON object with this exact structure:
       "text": "The exact spoken words — pattern interrupt, bold statement, no warm-up",
       "visual_cue": "Specific footage description — what to show (concrete, not abstract)",
       "overlay_text": "On-screen text that reinforces the hook tension (or null)",
-      "duration_estimate": 15,
+      "duration_estimate": 20,
       "pexels_search_queries": [
         "primary scene (most specific, e.g. 'person waking up alarm dark room')",
         "different subject/setting for same theme (e.g. 'morning routine coffee window light')",
@@ -140,14 +142,19 @@ Return ONLY a valid JSON object with this exact structure:
   ]
 }}
 
-Segment types in order: hook, bridge, point_1, pattern_interrupt, point_2, engagement, cta
-- hook: 10-15s, bold pattern interrupt
-- bridge: 10-15s, reinforce promise, tease content
-- point_1: 25-35s, problem → insight → takeaway
-- pattern_interrupt: 5-10s, rhetorical question or surprising stat (overlay_text is the key phrase)
-- point_2: 25-35s, deeper insight → payoff
-- engagement: 10-15s, specific comment prompt question
-- cta: 15-20s, value-specific subscription CTA
+Segment types in order: hook, bridge, context, point_1, pattern_interrupt_1, point_2, pattern_interrupt_2, point_3, pattern_interrupt_3, point_4, engagement, cta
+- hook: 15-20s, bold pattern interrupt
+- bridge: 20-30s, reinforce promise, tease content
+- context: 30-45s, set up the problem/premise
+- point_1: 75-90s, problem → insight → example → takeaway
+- pattern_interrupt_1: 10-15s, rhetorical question or surprising stat (overlay_text is the key phrase)
+- point_2: 75-90s, deeper insight → example → takeaway
+- pattern_interrupt_2: 10-15s, rhetorical question or surprising stat
+- point_3: 75-90s, insight → example → takeaway
+- pattern_interrupt_3: 10-15s, rhetorical question or surprising stat
+- point_4: 75-90s, payoff insight that resolves the curiosity loop from the hook
+- engagement: 20-30s, specific comment prompt question
+- cta: 30-45s, value-specific subscription CTA
 
 The pexels_search_queries array must have EXACTLY 3 varied queries per segment:
 - Query 1: Most specific scene for this segment
@@ -216,7 +223,7 @@ def main():
         try:
             response = client.messages.create(
                 model="claude-sonnet-4-6",
-                max_tokens=2500,
+                max_tokens=6000,
                 messages=[{"role": "user", "content": prompt}],
             )
             raw = response.content[0].text.strip()

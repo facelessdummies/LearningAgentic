@@ -52,15 +52,20 @@ The script uses these segment types in order:
 
 | Segment | Duration | Purpose |
 |---|---|---|
-| `hook` | 10-15s | Pattern interrupt — bold statement that breaks the scroll |
-| `bridge` | 10-15s | Reinforces the promise, teases what's coming |
-| `point_1` | 25-35s | Problem → insight → actionable takeaway |
-| `pattern_interrupt` | 5-10s | Rhetorical question or surprising stat — re-hooks viewer |
-| `point_2` | 25-35s | Deeper insight → payoff (resolves the curiosity loop) |
-| `engagement` | 10-15s | Specific comment prompt question |
-| `cta` | 15-20s | Value-specific subscription CTA |
+| `hook` | 15-20s | Pattern interrupt — bold statement that breaks the scroll |
+| `bridge` | 20-30s | Reinforces the promise, teases what's coming |
+| `context` | 30-45s | Sets up the problem/premise |
+| `point_1` | 75-90s | Problem → insight → example → takeaway |
+| `pattern_interrupt_1` | 10-15s | Rhetorical question or surprising stat — re-hooks viewer |
+| `point_2` | 75-90s | Deeper insight → example → takeaway |
+| `pattern_interrupt_2` | 10-15s | Re-hooks viewer |
+| `point_3` | 75-90s | Insight → example → takeaway |
+| `pattern_interrupt_3` | 10-15s | Re-hooks viewer |
+| `point_4` | 75-90s | Payoff — resolves the curiosity loop from the hook |
+| `engagement` | 20-30s | Specific comment prompt question |
+| `cta` | 30-45s | Value-specific subscription CTA |
 
-**Total: ~120-140 seconds (~250-280 words)**
+**Total: ~480-600 seconds (~1040-1300 words)**
 
 ## What Makes It Different from generate_script.py
 | Feature | `generate_script.py` | `generate_retention_script.py` |
@@ -82,11 +87,11 @@ The script uses these segment types in order:
   "description": "SEO description 150-300 words",
   "tags": ["tag1", "tag2"],
   "category_id": "26",
-  "total_duration_estimate": 130,
+  "total_duration_estimate": 540,
   "segments": [
     {
       "segment_id": 1,
-      "type": "hook|bridge|point_1|pattern_interrupt|point_2|engagement|cta",
+      "type": "hook|bridge|context|point_1|pattern_interrupt_1|point_2|pattern_interrupt_2|point_3|pattern_interrupt_3|point_4|engagement|cta",
       "text": "exact spoken words",
       "visual_cue": "footage description",
       "overlay_text": "on-screen text or null",
@@ -109,5 +114,5 @@ cp .tmp/scripts/standalone_topic_script.json .tmp/scripts/video_1_script.json
 
 ## Edge Cases
 - **No ideas file**: Use `--topic` to skip the ideas lookup entirely
-- **Script too long**: If > 300 words, adjust the prompt (Claude may exceed target length for complex topics)
+- **Script too short**: Target is 1040-1300 words (~8-10 min). If Claude produces significantly fewer words, the prompt may need nudging toward more detailed examples per point.
 - **Wrong tone**: The prompt targets warm, authoritative, second-person voice — if off, check the `NICHE` env var
