@@ -20,5 +20,9 @@ venv/
 *.mp3
 *.wav
 
+# Allow sfx directory
+!sfx/*.mp3
+!sfx/*.wav
+
 # OS
 .DS_Store
