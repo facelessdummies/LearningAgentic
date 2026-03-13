@@ -147,13 +147,13 @@ Segment types in order: hook, bridge, context, point_1, pattern_interrupt_1, poi
 - bridge: 20-30s, reinforce promise, tease content
 - context: 30-45s, set up the problem/premise
 - point_1: 75-90s, problem → insight → example → takeaway
-- pattern_interrupt_1: 10-15s, rhetorical question or surprising stat (overlay_text is the key phrase)
+- pattern_interrupt_1: 10-15s, rhetorical question or surprising stat (overlay_text is the key phrase). Optionally add "sfx": use "beep_0.5sec" for sharp stats or punchy 1-line questions, "bell" for reflective/insight moments. Omit "sfx" entirely for flowing transitions that don't need a sound cue.
 - point_2: 75-90s, deeper insight → example → takeaway
-- pattern_interrupt_2: 10-15s, rhetorical question or surprising stat
+- pattern_interrupt_2: 10-15s, rhetorical question or surprising stat. Same "sfx" rule as pattern_interrupt_1.
 - point_3: 75-90s, insight → example → takeaway
-- pattern_interrupt_3: 10-15s, rhetorical question or surprising stat
+- pattern_interrupt_3: 10-15s, rhetorical question or surprising stat. Same "sfx" rule as pattern_interrupt_1.
 - point_4: 75-90s, payoff insight that resolves the curiosity loop from the hook
-- engagement: 20-30s, specific comment prompt question
+- engagement: 20-30s, specific comment prompt question. Optionally add "sfx": "bell" if the moment calls for a soft chime to invite reflection. Omit if not needed.
 - cta: 30-45s, value-specific subscription CTA
 
 The pexels_search_queries array must have EXACTLY 3 varied queries per segment:
