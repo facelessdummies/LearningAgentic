@@ -43,6 +43,8 @@ OVERLAY_DISPLAY_DURATION = 4.5   # max seconds to show overlay text
 OVERLAY_REVEAL_DURATION  = 0.5   # seconds for left-to-right wipe-in animation
 OVERLAY_MARGIN           = 60    # px from top-left edge
 
+SFX_VOLUMES = {"riser": 0.40, "woosh": 0.50, "beep_0.5sec": 0.60, "beep_1sec": 0.60, "bell": 0.55}
+
 
 def get_audio_duration(audio_path):
     """Get duration of audio file in seconds."""
@@ -464,6 +466,47 @@ def assemble_segment_with_cuts(clip_paths, total_duration, segment_id):
     return segment_clip
 
 
+def build_sfx_events(valid_segments, segment_durations):
+    """Return list of (start_time_seconds, sfx_name) based on segment type."""
+    events = []
+    cumulative = 0.0
+    for seg, dur in zip(valid_segments, segment_durations):
+        seg_type = seg.get("type", "")
+        if seg_type == "hook":
+            events.append((cumulative, "riser"))
+        elif seg_type == "point_1":
+            events.append((cumulative, "woosh"))
+        elif seg_type == "cta":
+            events.append((cumulative, "woosh"))
+        elif seg_type.startswith("pattern_interrupt") and seg.get("sfx"):
+            events.append((cumulative, seg["sfx"]))
+        elif seg_type == "engagement" and seg.get("sfx"):
+            events.append((cumulative, seg["sfx"]))
+        cumulative += dur
+    return events
+
+
+def load_sfx_clips(sfx_dir):
+    """Load available SFX AudioFileClips. Missing files are skipped gracefully."""
+    from moviepy import AudioFileClip
+    import moviepy.audio.fx as afx
+    loaded = {}
+    for name, volume in SFX_VOLUMES.items():
+        for ext in ("mp3", "wav"):
+            path = os.path.join(sfx_dir, f"{name}.{ext}")
+            if os.path.exists(path):
+                try:
+                    clip = AudioFileClip(path).with_effects([afx.MultiplyVolume(volume)])
+                    loaded[name] = clip
+                    print(f"  SFX: loaded '{name}' at {int(volume*100)}%", file=sys.stderr)
+                except Exception as e:
+                    print(f"  SFX WARNING: could not load '{name}': {e}", file=sys.stderr)
+                break
+        else:
+            print(f"  SFX: '{name}' not found in {sfx_dir}, skipping.", file=sys.stderr)
+    return loaded
+
+
 def main():
     parser = argparse.ArgumentParser(description="Assemble final video")
     parser.add_argument("--script-file", required=True)
@@ -597,20 +640,38 @@ def main():
     # Add audio
     voiceover = AudioFileClip(args.audio_file)
 
+    # SFX
+    sfx_events = build_sfx_events(valid_segments, segment_durations)
+    sfx_dir = os.getenv("SFX_DIR", os.path.join(PROJECT_ROOT, "sfx")).strip()
+    sfx_loaded = {}
+    if sfx_dir and os.path.isdir(sfx_dir):
+        sfx_loaded = load_sfx_clips(sfx_dir)
+    elif sfx_dir:
+        print(f"  SFX: directory not found ({sfx_dir}), skipping.", file=sys.stderr)
+
+    sfx_audio_clips = []
+    for ts, sfx_name in sfx_events:
+        if sfx_name in sfx_loaded:
+            sfx_audio_clips.append(sfx_loaded[sfx_name].with_start(ts))
+            print(f"  SFX: '{sfx_name}' at t={ts:.1f}s", file=sys.stderr)
+
     # Optional background music
+    audio_layers = [voiceover]
     bg_music_path = os.getenv("BACKGROUND_MUSIC_PATH", "").strip()
     if bg_music_path and os.path.exists(bg_music_path):
-        from moviepy import CompositeAudioClip, concatenate_audioclips
+        from moviepy import concatenate_audioclips
         import moviepy.audio.fx as afx
         bg = AudioFileClip(bg_music_path).with_effects([afx.MultiplyVolume(0.10)])
         if bg.duration < final_video.duration:
-            # Loop background music
             loops = math.ceil(final_video.duration / bg.duration)
             bg = concatenate_audioclips([bg] * loops)
         bg = bg.subclipped(0, final_video.duration)
-        audio = CompositeAudioClip([voiceover, bg])
-    else:
-        audio = voiceover
+        audio_layers.append(bg)
+
+    audio_layers.extend(sfx_audio_clips)
+
+    from moviepy import CompositeAudioClip
+    audio = CompositeAudioClip(audio_layers) if len(audio_layers) > 1 else voiceover
 
     # Trim audio to video duration (or vice versa — use the shorter one)
     min_duration = min(final_video.duration, audio.duration)
