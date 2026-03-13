@@ -5,7 +5,7 @@ Generate a retention-optimized video script for any topic. Uses a specialized sc
 prompt with pattern interrupts, curiosity loops, engagement moments, and subscriber-driving CTAs.
 
 The `generate_retention_script.py` tool is also used automatically by the production pipeline
-(Step A in `production_agent.py`) — replacing the basic `generate_script.py` for all productions.
+(Step A in `production_agent.py`) — the sole script generator for all productions.
 Run this agent standalone when you want to review or refine a script before production.
 
 ## When to Run
@@ -67,18 +67,7 @@ The script uses these segment types in order:
 
 **Total: ~480-600 seconds (~1040-1300 words)**
 
-## What Makes It Different from generate_script.py
-| Feature | `generate_script.py` | `generate_retention_script.py` |
-|---|---|---|
-| Hook | Generic intro | Pattern interrupt (counterintuitive, shocking) |
-| Structure | Hook + 2 points + CTA | Hook → bridge → point → interrupt → point → engagement → CTA |
-| Curiosity loop | Not specified | Explicit loop opened in hook, closed in point_2 |
-| Pattern interrupts | 1 rhetorical question | Dedicated `pattern_interrupt` segment between points |
-| Engagement | Generic | Specific comment-prompting question |
-| CTA | Generic subscribe | Value-specific — tells viewer EXACTLY what they'll get |
-| Output format | Identical | Identical (drop-in compatible) |
-
-## Output Schema (identical to generate_script.py)
+## Output Schema
 ```json
 {
   "idea_id": 0,

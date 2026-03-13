@@ -10,7 +10,7 @@ Produces a script structured with:
   - Moments that encourage comments and engagement
   - Subscriber-driving CTA at the end
 
-Output schema is IDENTICAL to generate_script.py — drop-in compatible with the full pipeline.
+Output: JSON file with segmented script, compatible with all downstream pipeline tools.
 
 Usage:
     python3 tools/generate_retention_script.py \
