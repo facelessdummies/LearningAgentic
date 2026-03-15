@@ -10,7 +10,8 @@ For each approved video idea, generate a complete script, AI voiceover, fetch st
 - `.tmp/ideas.json` — the ideas file from this week's run
 - `ANTHROPIC_API_KEY` — Claude Sonnet for script generation
 - `OPENAI_API_KEY` — OpenAI TTS for voiceover
-- `PEXELS_API_KEY` — stock footage
+- `PEXELS_API_KEY` — primary stock footage source
+- `PIXABAY_API_KEY` — optional secondary footage source (leave blank to disable)
 - `credentials.json` + `token.json` — YouTube OAuth for upload
 
 ## Tools Used (per video)
@@ -39,11 +40,18 @@ After all videos:
      - Splits long text at sentence boundaries (4096 char API limit)
      - Concatenates chunks with pydub
      - Actual duration written to state
-   - **Footage**: Pexels Videos API
+   - **Footage**: multi-source waterfall (Pexels primary, Pixabay optional)
      - Fetches up to 3 clips per segment (one per query in `pexels_search_queries`)
      - Clips saved as `clip_001_0.mp4`, `clip_001_1.mp4`, `clip_001_2.mp4`
      - Manifest value is a list if multiple clips downloaded, string if only one (backward compat)
-     - Fallback per query: simplified query → niche keyword
+     - Waterfall order per query:
+       1. Original query → Pexels
+       2. Original query → Pixabay  *(skipped if PIXABAY_API_KEY not set)*
+       3. Simplified query → Pexels → Pixabay  *(only if steps 1+2 both empty)*
+       4. Channel/niche name → Pexels → Pixabay  *(last resort)*
+       5. Static photo fallback via Pexels  *(if no video found at all)*
+     - Pixabay quality selection: large > medium > small
+     - Pixabay steps silently skipped if `PIXABAY_API_KEY` not set — fully backward compatible
    - **Assembly**: moviepy renders final video
      - 1920x1080, 30fps, H.264/AAC
      - **Rapid cuts every 3–6 seconds** — each segment splits into multiple sub-clips cycling through downloaded footage
@@ -74,7 +82,7 @@ After all videos:
 |---|---|---|
 | Script (3x) | Claude Sonnet | ~$0.15 |
 | Voiceover (3x ~9k chars) | OpenAI TTS `tts-1` | ~$0.40 |
-| Footage | Pexels (free) | $0 |
+| Footage | Pexels + Pixabay (both free) | $0 |
 | Assembly | local CPU | $0 |
 | Upload | YouTube API | $0 |
 | **Total per week** | | **~$0.55** |
@@ -90,11 +98,12 @@ After all videos:
 - Add `--batch-size 5` argument to `assemble_video.py` if OOM errors occur
 - Monitor: `Activity Monitor` during render
 
-**Pexels footage irrelevant or missing:**
-- The script generation prompt explicitly instructs Claude to write concrete, specific Pexels queries
+**Footage irrelevant or missing:**
+- The script generation prompt explicitly instructs Claude to write concrete, specific queries
 - "person journaling coffee desk morning" not "productivity"
 - If still failing: edit the `pexels_search_queries` arrays in `.tmp/scripts/video_N_script.json` manually and re-run `fetch_pexels_footage.py`
 - Old scripts with `pexels_search_query` (single string) still work — backward compatible
+- Add `PIXABAY_API_KEY` to `.env` to enable Pixabay as a secondary source (free at pixabay.com/api/docs/)
 
 **OpenAI TTS character limit:**
 - API limit: 4096 chars per request
@@ -119,5 +128,5 @@ After all videos:
 
 **Resume after crash:**
 - Each tool checks if its output file already exists and skips if present
-- `fetch_pexels_footage.py` skips already-downloaded clips
+- `fetch_pexels_footage.py` skips already-downloaded clips (works for both Pexels and Pixabay clips)
 - Re-run `production_agent.py` to resume from where it crashed
