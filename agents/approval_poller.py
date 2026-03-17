@@ -12,6 +12,7 @@ Usage:
 
 import json
 import os
+import re
 import subprocess
 import sys
 from datetime import datetime, timezone
@@ -214,6 +215,32 @@ def handle_video_approval(state):
     # "__ALL__" means approve everything
     if approved_ids == "__ALL__":
         approved_ids = [v.get("youtube_video_id") for v in videos.values() if v.get("youtube_video_id")]
+    else:
+        # Resolve numeric indices (e.g. "2", "3") to YouTube video IDs
+        resolved = []
+        for vid_id in approved_ids:
+            if re.match(r"^\d+$", vid_id):
+                key = f"video_{vid_id}"
+                yt_id = videos.get(key, {}).get("youtube_video_id")
+                if yt_id:
+                    resolved.append(yt_id)
+                else:
+                    print(f"[poller] Warning: no video found for index {vid_id}", file=sys.stderr)
+            else:
+                resolved.append(vid_id)
+        approved_ids = resolved
+
+        # Also resolve numeric indices in rejected_ids
+        resolved_rejected = []
+        for vid_id in rejected_ids:
+            if re.match(r"^\d+$", vid_id):
+                key = f"video_{vid_id}"
+                yt_id = videos.get(key, {}).get("youtube_video_id")
+                if yt_id:
+                    resolved_rejected.append(yt_id)
+            else:
+                resolved_rejected.append(vid_id)
+        rejected_ids = resolved_rejected
 
     # If approved_ids is empty but rejected_ids has some, approve the rest
     if not approved_ids and rejected_ids:

@@ -115,11 +115,11 @@ def parse_videos_approval(text):
     approved_ids = []
     rejected_ids = []
 
-    approve_match = re.search(r"APPROVE[:\s]+([A-Z0-9_\-,\s]+?)(?:\n|REJECT|$)", text_upper)
+    approve_match = re.search(r"APPROVE[:\s]+([A-Za-z0-9_\-,\s]+?)(?:\n|REJECT|$)", text, re.IGNORECASE)
     if approve_match:
         approved_ids = _parse_id_list(approve_match.group(1))
 
-    reject_match = re.search(r"REJECT[:\s]+([A-Z0-9_\-,\s]+?)(?:\n|APPROVE|$)", text_upper)
+    reject_match = re.search(r"REJECT[:\s]+([A-Za-z0-9_\-,\s]+?)(?:\n|APPROVE|$)", text, re.IGNORECASE)
     if reject_match:
         rejected_ids = _parse_id_list(reject_match.group(1))
 
@@ -153,7 +153,7 @@ def _parse_id_list(s):
     ids = []
     for part in re.split(r"[,\s]+", s.strip()):
         part = part.strip()
-        if re.match(r"^[A-Za-z0-9_\-]{5,15}$", part):
+        if re.match(r"^[A-Za-z0-9_\-]{1,15}$", part):
             ids.append(part)
     return ids
 
