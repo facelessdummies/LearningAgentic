@@ -159,6 +159,8 @@ def main():
             except Exception as reg_err:
                 print(f"  WARNING: Could not update video registry: {reg_err}", file=sys.stderr)
 
+            print(f"  → Shorts for {video_key} will be produced tonight via shorts_scheduler cron")
+
         except Exception as e:
             error_msg = f"Failed to schedule {title} ({yt_id}): {e}"
             log_error(error_msg)
@@ -190,6 +192,7 @@ def main():
             "─" * 50,
             "Next steps:",
             "  • YouTube will publish each video automatically at the scheduled time",
+            "  • 2 Shorts per video are being created — you'll receive a separate email with Short URLs",
             "  • Check analytics in 48 hours after each publish",
             f"  • New ideas will be generated next Sunday",
             "",
