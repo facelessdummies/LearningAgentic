@@ -317,9 +317,17 @@ def main():
     produced = {}
     failed = []
 
+    existing_videos = state.get("videos", {})
+
     for i, idea_id in enumerate(approved_ids, 1):
         video_key = f"video_{i}"
         print(f"\n[production_agent] Processing idea {idea_id} ({i}/{len(approved_ids)})...")
+
+        # Skip already-uploaded videos
+        if video_key in existing_videos and existing_videos[video_key].get("status") == "uploaded_unlisted":
+            print(f"  [SKIP] {video_key} already uploaded ({existing_videos[video_key].get('youtube_url')})")
+            produced[video_key] = existing_videos[video_key]
+            continue
 
         try:
             video_meta = produce_video(idea_id, video_key, ideas_path)

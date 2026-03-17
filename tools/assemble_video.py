@@ -201,19 +201,38 @@ def make_reveal_text_clip(text, seg_duration, fontsize=OVERLAY_FONTSIZE, bg_opac
 
 def make_watermark(channel_name, total_duration):
     """Create channel watermark clip for entire video."""
-    from moviepy import TextClip
-    import moviepy.video.fx as vfx
+    from moviepy import ImageClip
+    from PIL import Image, ImageDraw, ImageFont
     try:
-        wm = TextClip(
-            text=channel_name,
-            font_size=WATERMARK_FONTSIZE,
-            color="white",
-            font=FONT,
-        )
-        wm = wm.with_opacity(0.3)
-        wm = wm.with_duration(total_duration)
-        wm = wm.with_position(("right", "top"))
-        wm = wm.with_effects([vfx.Margin(right=30, top=20, opacity=0)])
+        font = None
+        for font_path in [
+            "/System/Library/Fonts/Supplemental/Arial Bold.ttf",
+            "/System/Library/Fonts/Futura.ttc",
+            "/Library/Fonts/Futura.ttc",
+            "/System/Library/Fonts/AvenirNext.ttc",
+            "/System/Library/Fonts/Arial Bold.ttf",
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+        ]:
+            try:
+                font = ImageFont.truetype(font_path, WATERMARK_FONTSIZE)
+                break
+            except Exception:
+                pass
+        if font is None:
+            font = ImageFont.load_default()
+
+        dummy = Image.new("RGBA", (1, 1))
+        bbox = ImageDraw.Draw(dummy).textbbox((0, 0), channel_name, font=font)
+        text_w = bbox[2] - bbox[0]
+        text_h = bbox[3] - bbox[1]
+        pad = 8
+        img = Image.new("RGBA", (text_w + pad * 2, text_h + pad * 2), (0, 0, 0, 0))
+        ImageDraw.Draw(img).text((pad, pad), channel_name, font=font, fill=(255, 255, 255, 255))
+
+        wm = (ImageClip(np.array(img), is_mask=False)
+              .with_opacity(0.3)
+              .with_duration(total_duration)
+              .with_position(("right", "top")))
         return wm
     except Exception as e:
         print(f"  WARNING: Could not create watermark: {e}", file=sys.stderr)
@@ -308,25 +327,34 @@ def make_caption_chunk_clip(text, start, end):
     text_w = bbox[2] - bbox[0]
     text_h = bbox[3] - bbox[1]
 
-    # Full-frame transparent canvas
-    img = Image.new("RGBA", (TARGET_WIDTH, TARGET_HEIGHT), (0, 0, 0, 0))
+    # Small canvas sized to text + stroke padding (not full-frame)
+    stroke = 4
+    pad = stroke + 12
+    img_w = text_w + pad * 2
+    img_h = text_h + pad * 2
+
+    img = Image.new("RGBA", (img_w, img_h), (0, 0, 0, 0))
     draw = ImageDraw.Draw(img)
 
-    x = (TARGET_WIDTH - text_w) // 2
-    y = int(TARGET_HEIGHT * 0.82) - text_h  # ~82% down the screen
-
     # Thick black outline (8-directional offset)
-    stroke = 4
     for dx in range(-stroke, stroke + 1):
         for dy in range(-stroke, stroke + 1):
             if dx != 0 or dy != 0:
-                draw.text((x + dx, y + dy), text, font=font, fill=(0, 0, 0, 255))
+                draw.text((pad, pad), text, font=font, fill=(0, 0, 0, 255))
 
     # White text on top
-    draw.text((x, y), text, font=font, fill=(255, 255, 255, 255))
+    draw.text((pad, pad), text, font=font, fill=(255, 255, 255, 255))
 
     img_array = np.array(img)
-    clip = ImageClip(img_array, is_mask=False).with_duration(duration).with_start(start)
+
+    # Position: centered horizontally, at ~82% vertically
+    x_pos = (TARGET_WIDTH - img_w) // 2
+    y_pos = int(TARGET_HEIGHT * 0.82) - text_h
+
+    clip = (ImageClip(img_array, is_mask=False)
+            .with_duration(duration)
+            .with_start(start)
+            .with_position((x_pos, y_pos)))
     return clip
 
 
