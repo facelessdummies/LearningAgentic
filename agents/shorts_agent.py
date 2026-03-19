@@ -171,6 +171,7 @@ def produce_short(
         "--audio-duration", str(audio_duration),
         "--hook-overlay", hook_overlay,
         "--cta-overlay", cta_overlay,
+        "--script", spoken_script,
         "--output", output_path,
     ])
     print(f"  [{short_id}] Short assembled: {output_path}", file=sys.stderr)
